@@ -25,8 +25,9 @@ export default function App() {
 
   if (!isAuthReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500 z-10"></div>
       </div>
     );
   }

@@ -17,12 +17,12 @@ export const FallingNotes: React.FC<FallingNotesProps> = ({ song, currentTime, p
   );
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto h-[400px] bg-gray-900 rounded-t-xl overflow-hidden border-b-4 border-red-500">
+    <div className="relative w-full max-w-4xl mx-auto h-[400px] bg-black/40 rounded-t-3xl overflow-hidden border-b-4 border-orange-500 backdrop-blur-sm shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
       <div className="absolute bottom-0 left-0 right-0 h-full flex justify-center">
         <div className="relative flex h-full" style={{ width: '33rem' }}>
           {/* Render vertical lines for white keys */}
           {Array.from({ length: 11 }).map((_, i) => (
-            <div key={i} className="absolute top-0 bottom-0 border-r border-gray-800" style={{ left: `${(i + 1) * 3}rem` }} />
+            <div key={i} className="absolute top-0 bottom-0 border-r border-white/5" style={{ left: `${(i + 1) * 3}rem` }} />
           ))}
 
           {/* Render notes */}
@@ -44,12 +44,14 @@ export const FallingNotes: React.FC<FallingNotesProps> = ({ song, currentTime, p
               <div
                 key={`${idx}-${note.note}`}
                 className={clsx(
-                  "absolute rounded-sm opacity-90 shadow-[0_0_10px_rgba(0,0,0,0.5)]",
-                  isBlack ? "bg-indigo-500" : "bg-emerald-400"
+                  "absolute rounded-md opacity-90",
+                  isBlack 
+                    ? "bg-gradient-to-t from-orange-500 to-orange-400 shadow-[0_0_15px_rgba(255,120,0,0.6)]" 
+                    : "bg-gradient-to-t from-emerald-400 to-emerald-300 shadow-[0_0_15px_rgba(52,211,153,0.6)]"
                 )}
                 style={{
-                  left: `${leftPos}rem`,
-                  width: `${width}rem`,
+                  left: `${leftPos + 0.1}rem`,
+                  width: `${width - 0.2}rem`,
                   bottom: `${bottom}px`,
                   height: `${height}px`,
                 }}

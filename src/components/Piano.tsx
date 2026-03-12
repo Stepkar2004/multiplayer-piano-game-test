@@ -63,7 +63,7 @@ export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay }) => {
   let whiteKeyIndex = 0;
 
   return (
-    <div className="relative flex justify-center w-full max-w-4xl mx-auto h-48 select-none">
+    <div className="relative flex justify-center w-full max-w-4xl mx-auto h-48 select-none bg-black/20 p-2 rounded-b-3xl backdrop-blur-md border border-t-0 border-white/10 shadow-2xl">
       <div className="relative flex" style={{ width: '33rem' }}>
         {ALL_NOTES.map((note) => {
           const isBlack = isBlackKey(note);
@@ -77,8 +77,8 @@ export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay }) => {
                 key={note}
                 className={twMerge(
                   clsx(
-                    "absolute top-0 w-8 h-28 bg-black rounded-b-md border border-black z-10 flex items-end justify-center pb-2 cursor-pointer transition-colors",
-                    isActive ? "bg-indigo-600" : "hover:bg-gray-800"
+                    "absolute top-0 w-8 h-28 rounded-b-lg border border-black/50 z-10 flex items-end justify-center pb-2 cursor-pointer transition-all duration-75 shadow-[inset_0_-5px_10px_rgba(255,255,255,0.1)]",
+                    isActive ? "bg-orange-500 shadow-[0_0_20px_rgba(255,120,0,0.8)] translate-y-1" : "bg-gray-900 hover:bg-gray-800"
                   )
                 )}
                 style={{ left: `${leftPos}rem` }}
@@ -112,8 +112,8 @@ export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay }) => {
               key={note}
               className={twMerge(
                 clsx(
-                  "relative w-12 h-full bg-white border border-gray-300 rounded-b-md z-0 flex items-end justify-center pb-4 cursor-pointer transition-colors",
-                  isActive ? "bg-indigo-100 border-indigo-300" : "hover:bg-gray-50"
+                  "relative w-12 h-full rounded-b-xl z-0 flex items-end justify-center pb-4 cursor-pointer transition-all duration-75 shadow-[inset_0_-10px_20px_rgba(0,0,0,0.1)]",
+                  isActive ? "bg-emerald-100 border-emerald-300 shadow-[0_0_20px_rgba(52,211,153,0.8)] translate-y-1" : "bg-white border border-gray-300 hover:bg-gray-50"
                 )
               )}
               onMouseDown={() => {

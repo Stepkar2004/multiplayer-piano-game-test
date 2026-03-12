@@ -67,7 +67,9 @@ export const GameRoom: React.FC = () => {
   useEffect(() => {
     if (room?.status === 'playing') {
       if (!localStartTimeRef.current) {
-        localStartTimeRef.current = Date.now() + 3000;
+        const firstNoteTime = song?.notes[0]?.time || 0;
+        const startCurrentTime = firstNoteTime - 5;
+        localStartTimeRef.current = Date.now() - startCurrentTime * 1000;
       }
       
       const updateTime = () => {
@@ -122,7 +124,14 @@ export const GameRoom: React.FC = () => {
     }
   }, [room?.status, song]);
 
-  if (!room || !song) return <div className="p-8 text-center">Loading...</div>;
+  if (!room || !song) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-orange-500 z-10"></div>
+      </div>
+    );
+  }
 
   const isHost = room.hostId === auth.currentUser?.uid;
 
@@ -146,26 +155,27 @@ export const GameRoom: React.FC = () => {
 
   if (room.status === 'waiting') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h2 className="text-3xl font-bold mb-2">Room: {roomId.slice(0, 6)}</h2>
-          <p className="text-gray-600 mb-6">Song: {song.title}</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="glass-panel p-10 rounded-3xl max-w-md w-full text-center relative z-10">
+          <h2 className="text-3xl font-display font-bold mb-2 text-white">Room: {roomId.slice(0, 6)}</h2>
+          <p className="text-gray-400 mb-8">Song: <span className="text-white font-medium">{song.title}</span></p>
           
-          <div className="flex justify-between items-center mb-8 p-4 bg-gray-100 rounded-lg">
+          <div className="flex justify-between items-center mb-10 p-6 bg-black/30 rounded-2xl border border-white/5">
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mb-2">
-                <span className="text-indigo-600 font-bold">P1</span>
+              <div className="w-14 h-14 bg-orange-500/20 rounded-full flex items-center justify-center mb-3 border border-orange-500/50 shadow-[0_0_15px_rgba(255,78,0,0.3)]">
+                <span className="text-orange-500 font-bold">P1</span>
               </div>
-              <span className="text-sm font-medium">Host</span>
+              <span className="text-sm font-medium text-gray-300">Host</span>
             </div>
-            <div className="text-xl font-bold text-gray-400">VS</div>
+            <div className="text-2xl font-display font-bold text-gray-600 italic">VS</div>
             <div className="flex flex-col items-center">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${room.guestId ? 'bg-emerald-100' : 'bg-gray-200 border-2 border-dashed border-gray-400'}`}>
-                <span className={room.guestId ? 'text-emerald-600 font-bold' : 'text-gray-400'}>
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-3 transition-all duration-500 ${room.guestId ? 'bg-emerald-500/20 border border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.3)]' : 'bg-white/5 border-2 border-dashed border-white/20'}`}>
+                <span className={room.guestId ? 'text-emerald-400 font-bold' : 'text-gray-500'}>
                   {room.guestId ? 'P2' : '?'}
                 </span>
               </div>
-              <span className="text-sm font-medium">{room.guestId ? 'Guest' : 'Waiting...'}</span>
+              <span className="text-sm font-medium text-gray-300">{room.guestId ? 'Guest' : 'Waiting...'}</span>
             </div>
           </div>
 
@@ -173,17 +183,17 @@ export const GameRoom: React.FC = () => {
             <button
               onClick={startGame}
               disabled={!room.guestId}
-              className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition mb-3"
+              className="w-full py-4 px-6 bg-orange-600 text-white rounded-full font-bold hover:bg-orange-500 disabled:opacity-30 disabled:hover:bg-orange-600 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,78,0,0.4)] mb-4"
             >
               {room.guestId ? 'Start Game' : 'Waiting for opponent...'}
             </button>
           ) : (
-            <div className="text-gray-600 font-medium mb-4">Waiting for host to start...</div>
+            <div className="text-orange-400 font-medium mb-6 animate-pulse">Waiting for host to start...</div>
           )}
           
           <button
             onClick={leaveRoom}
-            className="w-full py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition"
+            className="w-full py-4 px-6 bg-white/10 text-white rounded-full font-bold hover:bg-white/20 transition-all"
           >
             Leave Room
           </button>
@@ -194,13 +204,14 @@ export const GameRoom: React.FC = () => {
 
   if (room.status === 'abandoned') {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h2 className="text-3xl font-bold text-red-600 mb-4">Room Closed</h2>
-          <p className="text-gray-600 mb-8">The host has left the room.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="glass-panel p-10 rounded-3xl max-w-md w-full text-center relative z-10">
+          <h2 className="text-4xl font-display font-bold text-red-500 mb-4">Room Closed</h2>
+          <p className="text-gray-300 mb-10">The host has left the room.</p>
           <button
             onClick={() => navigate('/')}
-            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
+            className="w-full py-4 px-6 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105"
           >
             Back to Lobby
           </button>
@@ -212,28 +223,32 @@ export const GameRoom: React.FC = () => {
   if (room.status === 'finished') {
     const myScore = isHost ? room.hostScore : room.guestScore;
     const theirScore = isHost ? room.guestScore : room.hostScore;
+    const isSolo = !room.guestId;
     const won = myScore > theirScore;
     const tie = myScore === theirScore;
 
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h2 className="text-4xl font-bold mb-4">
-            {tie ? 'Tie!' : won ? 'You Won!' : 'You Lost!'}
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="glass-panel p-10 rounded-3xl max-w-md w-full text-center relative z-10">
+          <h2 className={`text-5xl font-display font-bold mb-8 ${isSolo ? 'text-white' : tie ? 'text-yellow-400' : won ? 'text-emerald-400' : 'text-red-400'}`}>
+            {isSolo ? 'Game Over!' : tie ? 'Tie!' : won ? 'You Won!' : 'You Lost!'}
           </h2>
-          <div className="flex justify-around mb-8">
+          <div className="flex justify-around mb-10 p-6 bg-black/30 rounded-2xl border border-white/5">
             <div>
-              <p className="text-sm text-gray-500">Your Score</p>
-              <p className="text-3xl font-bold text-indigo-600">{myScore}</p>
+              <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">Your Score</p>
+              <p className="text-4xl font-display font-bold text-white">{myScore}</p>
             </div>
-            <div>
-              <p className="text-sm text-gray-500">Opponent</p>
-              <p className="text-3xl font-bold text-gray-800">{theirScore}</p>
-            </div>
+            {!isSolo && (
+              <div>
+                <p className="text-sm text-gray-400 uppercase tracking-wider mb-2">Opponent</p>
+                <p className="text-4xl font-display font-bold text-gray-500">{theirScore}</p>
+              </div>
+            )}
           </div>
           <button
             onClick={() => navigate('/')}
-            className="w-full py-3 px-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition"
+            className="w-full py-4 px-6 bg-orange-600 text-white rounded-full font-bold hover:bg-orange-500 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(255,78,0,0.4)]"
           >
             Back to Lobby
           </button>
@@ -243,35 +258,47 @@ export const GameRoom: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-4xl flex justify-between items-center mb-4 text-white">
-        <div className="flex flex-col">
-          <span className="text-sm text-gray-400">Your Score</span>
-          <span className="text-2xl font-bold text-indigo-400">{score}</span>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="atmosphere"></div>
+      <div className="w-full max-w-4xl flex justify-between items-center mb-6 text-white relative z-10">
+        <div className="flex flex-col glass-panel px-6 py-3 rounded-2xl">
+          <span className="text-xs text-gray-400 uppercase tracking-wider mb-1">Your Score</span>
+          <span className="text-3xl font-display font-bold text-orange-400">{score}</span>
         </div>
-        <div className="text-center">
-          <h2 className="text-xl font-bold">{song.title}</h2>
-          {currentTime < 0 && (
-            <p className="text-red-400 font-bold text-lg">Starts in {Math.ceil(Math.abs(currentTime))}s</p>
+        <div className="text-center glass-panel px-8 py-3 rounded-2xl">
+          <h2 className="text-2xl font-display font-bold text-white tracking-wide">{song.title}</h2>
+          {currentTime < (song.notes[0]?.time || 0) - 2 && (
+            <p className="text-orange-400 font-bold text-xl mt-1 animate-pulse">Starts in {Math.ceil((song.notes[0]?.time || 0) - 2 - currentTime)}s</p>
           )}
         </div>
-        <div className="flex flex-col text-right">
-          <span className="text-sm text-gray-400">Opponent</span>
-          <span className="text-2xl font-bold text-emerald-400">{opponentScore}</span>
+        <div className="flex flex-col text-right glass-panel px-6 py-3 rounded-2xl">
+          {room.guestId ? (
+            <>
+              <span className="text-xs text-gray-400 uppercase tracking-wider mb-1">Opponent</span>
+              <span className="text-3xl font-display font-bold text-emerald-400">{opponentScore}</span>
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-gray-400 uppercase tracking-wider mb-1">Mode</span>
+              <span className="text-3xl font-display font-bold text-emerald-400">Solo</span>
+            </>
+          )}
         </div>
       </div>
       
-      <div className="w-full max-w-4xl flex justify-end mb-4">
+      <div className="w-full max-w-4xl flex justify-end mb-6 relative z-10">
         <button
           onClick={leaveRoom}
-          className="px-4 py-2 bg-red-900/50 text-red-200 rounded-lg hover:bg-red-800/50 transition text-sm font-medium"
+          className="px-5 py-2 bg-red-500/10 text-red-400 rounded-full hover:bg-red-500/20 border border-red-500/30 transition-all text-sm font-bold tracking-wider uppercase"
         >
           Leave Game
         </button>
       </div>
 
-      <FallingNotes song={song} currentTime={currentTime} />
-      <Piano onNotePlay={handleNotePlay} />
+      <div className="relative z-10 w-full max-w-4xl">
+        <FallingNotes song={song} currentTime={currentTime} />
+        <Piano onNotePlay={handleNotePlay} />
+      </div>
     </div>
   );
 };

@@ -45,6 +45,22 @@ export const Lobby: React.FC = () => {
     }
   };
 
+  const playAlone = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const roomRef = await addDoc(collection(db, 'rooms'), {
+        hostId: auth.currentUser.uid,
+        songId: selectedSong,
+        status: 'playing',
+        hostScore: 0,
+        guestScore: 0,
+      });
+      navigate(`/room/${roomRef.id}`);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'rooms');
+    }
+  };
+
   const joinRoom = async (roomId: string) => {
     if (!auth.currentUser) return;
     try {
@@ -59,13 +75,14 @@ export const Lobby: React.FC = () => {
 
   if (!auth.currentUser) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <h1 className="text-4xl font-bold text-indigo-600 mb-2">Piano Battle</h1>
-          <p className="text-gray-600 mb-8">Compete with friends on the virtual piano!</p>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden">
+        <div className="atmosphere"></div>
+        <div className="glass-panel p-10 rounded-3xl max-w-md w-full text-center relative z-10">
+          <h1 className="text-5xl font-display font-bold text-white mb-4 tracking-tight">Piano Battle</h1>
+          <p className="text-gray-300 mb-10 text-lg">Compete with friends on the virtual piano!</p>
           <button
             onClick={loginWithGoogle}
-            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
+            className="w-full py-4 px-6 bg-white text-black rounded-full font-bold hover:bg-gray-200 transition-all transform hover:scale-105 shadow-lg"
           >
             Sign in with Google
           </button>
@@ -75,15 +92,16 @@ export const Lobby: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Piano Battle Lobby</h1>
+    <div className="min-h-screen p-8 relative overflow-hidden">
+      <div className="atmosphere"></div>
+      <div className="max-w-4xl mx-auto relative z-10">
+        <div className="flex justify-between items-center mb-12">
+          <h1 className="text-4xl font-display font-bold text-white tracking-tight">Piano Battle Lobby</h1>
           <div className="flex items-center gap-4">
-            <span className="text-gray-600 font-medium">{auth.currentUser.displayName}</span>
+            <span className="text-gray-300 font-medium">{auth.currentUser.displayName}</span>
             <button
               onClick={logout}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+              className="px-5 py-2 glass-panel text-white rounded-full hover:bg-white/10 transition font-medium"
             >
               Sign Out
             </button>
@@ -91,50 +109,58 @@ export const Lobby: React.FC = () => {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold mb-4">Create a Room</h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Song</label>
+          <div className="glass-panel p-8 rounded-3xl">
+            <h2 className="text-2xl font-display font-bold mb-6 text-white">Create a Room</h2>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-3 uppercase tracking-wider">Select Song</label>
               <select
                 value={selectedSong}
                 onChange={(e) => setSelectedSong(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full p-4 bg-black/40 border border-white/10 rounded-2xl text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
               >
                 {SONGS.map(song => (
-                  <option key={song.id} value={song.id}>
+                  <option key={song.id} value={song.id} className="bg-gray-900">
                     {song.title} ({song.difficulty})
                   </option>
                 ))}
               </select>
             </div>
-            <button
-              onClick={createRoom}
-              className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
-            >
-              Create Room
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={createRoom}
+                className="flex-1 py-4 px-4 bg-white text-black rounded-2xl font-bold hover:bg-gray-200 transition-all transform hover:-translate-y-1 shadow-lg"
+              >
+                Create Room
+              </button>
+              <button
+                onClick={playAlone}
+                className="flex-1 py-4 px-4 bg-orange-600 text-white rounded-2xl font-bold hover:bg-orange-500 transition-all transform hover:-translate-y-1 shadow-lg"
+              >
+                Play Alone
+              </button>
+            </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-xl font-bold mb-4">Available Rooms</h2>
+          <div className="glass-panel p-8 rounded-3xl">
+            <h2 className="text-2xl font-display font-bold mb-6 text-white">Available Rooms</h2>
             {rooms.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-12 text-gray-400 italic">
                 No rooms available. Create one to start playing!
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {rooms.map(room => {
                   const song = SONGS.find(s => s.id === room.songId);
                   return (
-                    <div key={room.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-indigo-300 transition">
+                    <div key={room.id} className="flex items-center justify-between p-5 bg-black/20 border border-white/5 rounded-2xl hover:border-orange-500/50 transition-all group">
                       <div>
-                        <p className="font-bold text-gray-900">Room {room.id.slice(0, 4)}</p>
-                        <p className="text-sm text-gray-500">{song?.title || 'Unknown Song'}</p>
+                        <p className="font-bold text-white text-lg">Room {room.id.slice(0, 4)}</p>
+                        <p className="text-sm text-gray-400">{song?.title || 'Unknown Song'}</p>
                       </div>
                       <button
                         onClick={() => joinRoom(room.id)}
                         disabled={room.hostId === auth.currentUser?.uid}
-                        className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-bold hover:bg-emerald-200 disabled:opacity-50 transition"
+                        className="px-6 py-3 bg-white/10 text-white rounded-xl font-bold hover:bg-white/20 disabled:opacity-30 transition-all group-hover:bg-orange-600 group-hover:text-white"
                       >
                         {room.hostId === auth.currentUser?.uid ? 'Your Room' : 'Join'}
                       </button>
