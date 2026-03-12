@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function hasOnlyAllowedFields(allowedFields) {
+      return request.resource.data.keys().hasOnly(allowedFields);
+    }
+    
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['displayName', 'totalScore']) &&
+             data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 50 &&
+             data.totalScore is number && data.totalScore >= 0;
+    }
+    
+    function isValidRoom(data) {
+      return hasOnlyAllowedFields(['hostId', 'guestId', 'songId', 'status', 'hostScore', 'guestScore', 'startTime']) &&
+             data.hostId is string && data.hostId.size() > 0 && data.hostId.size() <= 128 &&
+             (!('guestId' in data) || (data.guestId is string && data.guestId.size() <= 128)) &&
+             data.songId is string && data.songId.size() > 0 && data.songId.size() <= 50 &&
+             data.status in ['waiting', 'playing', 'finished'] &&
+             data.hostScore is number && data.hostScore >= 0 &&
+             data.guestScore is number && data.guestScore >= 0 &&
+             (!('startTime' in data) || data.startTime is number);
+    }
+    
+    // ===============================================================
+    // Rules
+    // ===============================================================
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+    
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      // Any authenticated user can create a room (they become host)
+      allow create: if isAuthenticated() && isValidRoom(request.resource.data) && request.resource.data.hostId == request.auth.uid;
+      // Anyone in the room can update it (guest joining, scores updating)
+      allow update: if isAuthenticated() && isValidRoom(request.resource.data) && 
+                    (resource.data.hostId == request.auth.uid || 
+                     (!('guestId' in resource.data) && request.resource.data.guestId == request.auth.uid) ||
+                     ('guestId' in resource.data && resource.data.guestId == request.auth.uid));
+      // Only host can delete
+      allow delete: if isAuthenticated() && resource.data.hostId == request.auth.uid;
+    }
+  }
+}

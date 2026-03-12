@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A player profile",
+      "type": "object",
+      "properties": {
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name"
+        },
+        "totalScore": {
+          "type": "number",
+          "description": "The user's total accumulated score"
+        }
+      },
+      "required": ["displayName", "totalScore"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "A game room where players compete",
+      "type": "object",
+      "properties": {
+        "hostId": {
+          "type": "string",
+          "description": "The UID of the user who created the room"
+        },
+        "guestId": {
+          "type": "string",
+          "description": "The UID of the user who joined the room"
+        },
+        "songId": {
+          "type": "string",
+          "description": "The ID of the song to play"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["waiting", "playing", "finished"],
+          "description": "The current status of the game"
+        },
+        "hostScore": {
+          "type": "number",
+          "description": "The score of the host"
+        },
+        "guestScore": {
+          "type": "number",
+          "description": "The score of the guest"
+        },
+        "startTime": {
+          "type": "number",
+          "description": "The timestamp when the game starts"
+        }
+      },
+      "required": ["hostId", "songId", "status", "hostScore", "guestScore"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Stores user profiles"
+    },
+    "rooms/{roomId}": {
+      "schema": {
+        "$ref": "#/entities/Room"
+      },
+      "description": "Stores game rooms"
+    }
+  }
+}
