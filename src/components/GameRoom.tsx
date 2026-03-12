@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, deleteField } from 'firebase/firestore';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { getSong, Song } from '../lib/songs';
 import { Piano } from './Piano';
@@ -12,7 +12,6 @@ export const GameRoom: React.FC = () => {
   const [room, setRoom] = useState<any>(null);
   const [song, setSong] = useState<Song | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [activeNotes, setActiveNotes] = useState<Set<string>>(new Set());
   const [score, setScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
   
@@ -43,8 +42,7 @@ export const GameRoom: React.FC = () => {
     if (!roomId || !room) return;
     try {
       await updateDoc(doc(db, 'rooms', roomId), {
-        status: 'playing',
-        startTime: Date.now() + 3000 // Start in 3 seconds
+        status: 'playing'
       });
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `rooms/${roomId}`);
@@ -64,12 +62,18 @@ export const GameRoom: React.FC = () => {
   };
 
   const currentTimeRef = useRef(0);
+  const localStartTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (room?.status === 'playing' && room.startTime) {
+    if (room?.status === 'playing') {
+      if (!localStartTimeRef.current) {
+        localStartTimeRef.current = Date.now() + 3000;
+      }
+      
       const updateTime = () => {
+        if (!localStartTimeRef.current) return;
         const now = Date.now();
-        const elapsed = (now - room.startTime) / 1000;
+        const elapsed = (now - localStartTimeRef.current) / 1000;
         setCurrentTime(elapsed);
         currentTimeRef.current = elapsed;
         
@@ -81,32 +85,18 @@ export const GameRoom: React.FC = () => {
             }
             return;
           }
-          
-          // Update active notes for visual feedback
-          const newActiveNotes = new Set<string>();
-          song.notes.forEach(n => {
-            if (elapsed >= n.time && elapsed <= n.time + n.duration) {
-              newActiveNotes.add(n.note);
-            }
-          });
-          
-          setActiveNotes(prev => {
-            if (prev.size !== newActiveNotes.size) return newActiveNotes;
-            for (let item of newActiveNotes) {
-              if (!prev.has(item)) return newActiveNotes;
-            }
-            return prev;
-          });
         }
         
         requestRef.current = requestAnimationFrame(updateTime);
       };
       requestRef.current = requestAnimationFrame(updateTime);
+    } else {
+      localStartTimeRef.current = null;
     }
     return () => {
       if (requestRef.current) cancelAnimationFrame(requestRef.current);
     };
-  }, [room?.status, room?.startTime, song, roomId]);
+  }, [room?.status, song, roomId]);
 
   const handleNotePlay = useCallback((note: string) => {
     if (room?.status !== 'playing' || !song) return;
@@ -135,6 +125,24 @@ export const GameRoom: React.FC = () => {
   if (!room || !song) return <div className="p-8 text-center">Loading...</div>;
 
   const isHost = room.hostId === auth.currentUser?.uid;
+
+  const leaveRoom = async () => {
+    if (!roomId || !room) return;
+    try {
+      if (isHost) {
+        // We need to import deleteDoc from firebase/firestore
+        // Wait, I will add it to the imports
+        await updateDoc(doc(db, 'rooms', roomId), { status: 'abandoned' });
+      } else {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          guestId: deleteField()
+        });
+      }
+      navigate('/');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `rooms/${roomId}`);
+    }
+  };
 
   if (room.status === 'waiting') {
     return (
@@ -165,13 +173,37 @@ export const GameRoom: React.FC = () => {
             <button
               onClick={startGame}
               disabled={!room.guestId}
-              className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition"
+              className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition mb-3"
             >
               {room.guestId ? 'Start Game' : 'Waiting for opponent...'}
             </button>
           ) : (
-            <div className="text-gray-600 font-medium">Waiting for host to start...</div>
+            <div className="text-gray-600 font-medium mb-4">Waiting for host to start...</div>
           )}
+          
+          <button
+            onClick={leaveRoom}
+            className="w-full py-3 px-4 bg-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-300 transition"
+          >
+            Leave Room
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (room.status === 'abandoned') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
+          <h2 className="text-3xl font-bold text-red-600 mb-4">Room Closed</h2>
+          <p className="text-gray-600 mb-8">The host has left the room.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full py-3 px-4 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition"
+          >
+            Back to Lobby
+          </button>
         </div>
       </div>
     );
@@ -228,9 +260,18 @@ export const GameRoom: React.FC = () => {
           <span className="text-2xl font-bold text-emerald-400">{opponentScore}</span>
         </div>
       </div>
+      
+      <div className="w-full max-w-4xl flex justify-end mb-4">
+        <button
+          onClick={leaveRoom}
+          className="px-4 py-2 bg-red-900/50 text-red-200 rounded-lg hover:bg-red-800/50 transition text-sm font-medium"
+        >
+          Leave Game
+        </button>
+      </div>
 
       <FallingNotes song={song} currentTime={currentTime} />
-      <Piano onNotePlay={handleNotePlay} activeNotes={activeNotes} />
+      <Piano onNotePlay={handleNotePlay} />
     </div>
   );
 };

@@ -31,7 +31,7 @@ service cloud.firestore {
              data.hostId is string && data.hostId.size() > 0 && data.hostId.size() <= 128 &&
              (!('guestId' in data) || (data.guestId is string && data.guestId.size() <= 128)) &&
              data.songId is string && data.songId.size() > 0 && data.songId.size() <= 50 &&
-             data.status in ['waiting', 'playing', 'finished'] &&
+             data.status in ['waiting', 'playing', 'finished', 'abandoned'] &&
              data.hostScore is number && data.hostScore >= 0 &&
              data.guestScore is number && data.guestScore >= 0 &&
              (!('startTime' in data) || data.startTime is number);

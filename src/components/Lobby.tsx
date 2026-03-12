@@ -26,6 +26,12 @@ export const Lobby: React.FC = () => {
   const createRoom = async () => {
     if (!auth.currentUser) return;
     try {
+      // Clean up any existing waiting rooms hosted by this user
+      const existingRooms = rooms.filter(r => r.hostId === auth.currentUser?.uid && r.status === 'waiting');
+      for (const r of existingRooms) {
+        await updateDoc(doc(db, 'rooms', r.id), { status: 'abandoned' });
+      }
+
       const roomRef = await addDoc(collection(db, 'rooms'), {
         hostId: auth.currentUser.uid,
         songId: selectedSong,

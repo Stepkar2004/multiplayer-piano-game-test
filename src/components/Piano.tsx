@@ -6,10 +6,9 @@ import { twMerge } from 'tailwind-merge';
 
 interface PianoProps {
   onNotePlay: (note: string) => void;
-  activeNotes: Set<string>;
 }
 
-export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay, activeNotes }) => {
+export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay }) => {
   const [synth, setSynth] = useState<Tone.PolySynth | null>(null);
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
 
@@ -68,7 +67,7 @@ export const Piano: React.FC<PianoProps> = React.memo(({ onNotePlay, activeNotes
       <div className="relative flex" style={{ width: '33rem' }}>
         {ALL_NOTES.map((note) => {
           const isBlack = isBlackKey(note);
-          const isActive = pressedKeys.has(note) || activeNotes.has(note);
+          const isActive = pressedKeys.has(note);
           const keyChar = NOTE_TO_KEY[note]?.toUpperCase();
 
           if (isBlack) {
